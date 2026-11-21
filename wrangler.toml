@@ -1,0 +1,8 @@
+name = "urlshortner"
+compatibility_date = "2026-11-21"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./public"
+
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "5661fd09fd3f47aeb36a96e412b0e3ea"

@@ -9,16 +9,20 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "build": "wrangler pages functions build --compatibility-flags=nodejs_compat --compatibility-date=2026-11-21",
+    "pages:dev": "wrangler pages dev public",
+    "deploy": "wrangler pages deploy public",
     "test": "node --test"
   },
   "dependencies": {
+    "@neon/config": "^1.14.6",
+    "@neon/env": "^2.1.9",
     "dotenv": "^17.0.1",
     "express": "^5.2.1",
-    "mongod": "^2.0.0",
-    "mongodb": "^7.6.0",
-    "mongoose": "^9.10.2",
-    "nanoid": "^5.1.16",
     "nodemon": "^3.1.14",
-    "shortid": "^2.2.17"
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.166.0"
   }
 }

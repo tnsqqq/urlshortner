@@ -1,14 +1,5 @@
-const shortid = require('shortid');
-const { getUrlRepository } = require('../models/url');
-
-function isValidUrl(input) {
-  try {
-    new URL(input);
-    return true;
-  } catch {
-    return false;
-  }
-}
+const { withPostgres } = require('../connect');
+const { createShortUrl, getUrlAnalytics, isValidUrl, listShortUrls } = require('../lib/url-service');
 
 async function handleGenerateNewShortURL(req, res) {
   const originalUrl = String(req.body?.url || '').trim();
@@ -21,58 +12,44 @@ async function handleGenerateNewShortURL(req, res) {
     return res.status(400).json({ error: 'Please provide a valid absolute URL' });
   }
 
-  const repository = getUrlRepository();
-  let shortId = shortid.generate();
-
-  while (await repository.findOne({ shortId })) {
-    shortId = shortid.generate();
-  }
-
-  const createdEntry = await repository.create({
-    shortId,
-    redirectURL: originalUrl,
-    clickCount: 0,
-    visitHistory: [],
-  });
-
   const host = `${req.protocol}://${req.get('host')}`;
 
-  return res.json({
-    id: shortId,
-    shortId,
-    shortUrl: `${host}/${shortId}`,
-    redirectURL: createdEntry.redirectURL,
-  });
+  try {
+    const createdUrl = await withPostgres(process.env, (db) =>
+      createShortUrl(db, originalUrl, host)
+    );
+    return res.json(createdUrl);
+  } catch (error) {
+    console.error('Unable to create short URL:', error);
+    return res.status(500).json({ error: 'Unable to create short URL' });
+  }
 }
 
 async function handleListUrls(req, res) {
-  const repository = getUrlRepository();
-  const entries = await repository.find();
+  const idsParameter = new URL(req.originalUrl, 'http://localhost').searchParams.get('ids');
+  const shortIds = idsParameter === null ? null : idsParameter.split(',').filter(Boolean);
 
-  return res.json(
-    entries.map((entry) => ({
-      shortId: entry.shortId,
-      redirectURL: entry.redirectURL,
-      totalClicks: Number(entry.clickCount ?? entry.visitHistory.length ?? 0),
-      lastVisited: entry.visitHistory.at(-1)?.timestamp || null,
-    }))
-  );
+  try {
+    const entries = await withPostgres(process.env, (db) => listShortUrls(db, shortIds));
+    return res.json(entries);
+  } catch (error) {
+    console.error('Unable to list short URLs:', error);
+    return res.status(500).json({ error: 'Unable to list short URLs' });
+  }
 }
 
 async function handleGetAnalytics(req, res) {
   const shortId = req.params.shortId;
-  const repository = getUrlRepository();
-  const result = await repository.findOne({ shortId });
-
-  if (!result) {
-    return res.status(404).json({ error: 'Short URL not found' });
+  try {
+    const result = await withPostgres(process.env, (db) => getUrlAnalytics(db, shortId));
+    if (!result) {
+      return res.status(404).json({ error: 'Short URL not found' });
+    }
+    return res.json(result);
+  } catch (error) {
+    console.error('Unable to load short URL analytics:', error);
+    return res.status(500).json({ error: 'Unable to load short URL analytics' });
   }
-
-  return res.json({
-    shortId,
-    totalClicks: Number(result.clickCount ?? result.visitHistory.length ?? 0),
-    analytics: result.visitHistory,
-  });
 }
 
 module.exports = {
