@@ -10,6 +10,27 @@ const {
 } = require('../lib/url-service');
 const { createApp } = require('../index');
 
+test('only accepts short links from this site when tracking an existing link', async () => {
+  const { getShortIdFromUrl } = await import('../public/url-utils.mjs');
+
+  assert.equal(
+    getShortIdFromUrl('https://short.example/kYztmZU0V', 'https://short.example'),
+    'kYztmZU0V'
+  );
+  assert.equal(
+    getShortIdFromUrl('https://other.example/kYztmZU0V', 'https://short.example'),
+    null
+  );
+  assert.equal(
+    getShortIdFromUrl('https://short.example/path/kYztmZU0V', 'https://short.example'),
+    null
+  );
+  assert.equal(
+    getShortIdFromUrl('https://short.example/kYztmZU0V?preview=1', 'https://short.example'),
+    null
+  );
+});
+
 test('JSON API responses are not cached', async () => {
   const { jsonResponse } = await import('../lib/pages-utils.mjs');
   const response = jsonResponse([]);

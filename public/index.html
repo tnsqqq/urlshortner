@@ -77,6 +77,13 @@
             Refresh
           </button>
         </div>
+        <form id="trackUrlForm" class="track-url-form">
+          <div>
+            <label for="trackUrlInput">Track an existing short link</label>
+            <input id="trackUrlInput" type="url" placeholder="Paste a short link from this site" required />
+          </div>
+          <button class="secondary-button" type="submit">Add link</button>
+        </form>
         <div id="urlList" class="url-list"></div>
       </div>
     </section>
@@ -92,7 +99,7 @@
     </div>
   </footer>
 
-  <script src="/app.js"></script>
+  <script type="module" src="/app.js"></script>
 </body>
 
 </html>
