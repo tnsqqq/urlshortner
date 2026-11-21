@@ -68,7 +68,7 @@ async function loadUrls({ showLoading = false } = {}) {
   urlRefreshInProgress = true;
   urlList.setAttribute('aria-busy', 'true');
   if (showLoading || !hasLoadedUrlList) {
-    urlList.innerHTML = '<div class="url-item"><div class="url-meta">Loading link counts...</div></div>';
+    urlList.innerHTML = '<div class="url-item"><div class="url-meta">Loading saved links...</div></div>';
   }
 
   try {
@@ -82,7 +82,7 @@ async function loadUrls({ showLoading = false } = {}) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Unable to load link counts');
+        throw new Error(data.error || 'Unable to load links');
       }
       if (!Array.isArray(data)) {
         throw new Error('The link stats response was invalid');
@@ -111,7 +111,6 @@ async function loadUrls({ showLoading = false } = {}) {
                 <a class="url-link" href="${shortLink}" target="_blank" rel="noreferrer">${shortLink}</a>
                 <a class="url-link secondary" href="${item.redirectURL}" target="_blank" rel="noreferrer">${item.redirectURL}</a>
               </div>
-              <div class="click-count">${item.totalClicks} clicks</div>
             </div>
           `;
         }
@@ -120,10 +119,10 @@ async function loadUrls({ showLoading = false } = {}) {
     hasLoadedUrlList = true;
     return true;
   } catch (error) {
-    console.error('Unable to refresh link counts:', error);
-    urlList.innerHTML = '<div class="url-item"><div class="url-meta">Unable to load current click counts. Try refreshing.</div></div>';
+    console.error('Unable to load saved links:', error);
+    urlList.innerHTML = '<div class="url-item"><div class="url-meta">Unable to load saved links. Try refreshing.</div></div>';
     hasLoadedUrlList = false;
-    setMessage('Unable to refresh click counts. Please try again.', 'error');
+    setMessage('Unable to refresh links. Please try again.', 'error');
     return false;
   } finally {
     urlRefreshInProgress = false;
@@ -176,7 +175,7 @@ form.addEventListener('submit', async (event) => {
 refreshBtn.addEventListener('click', async () => {
   await loadHealth();
   if (await loadUrls({ showLoading: true })) {
-    setMessage('Analytics refreshed', 'success');
+    setMessage('Links refreshed', 'success');
   }
 });
 
@@ -214,7 +213,7 @@ setInterval(() => {
   if (!document.hidden) {
     loadUrls();
   }
-}, 2500);
+}, 15000);
 
 setInterval(() => {
   if (!document.hidden) {

@@ -368,17 +368,6 @@ input:focus {
   font-weight: 400;
 }
 
-.click-count {
-  min-width: 104px;
-  border-radius: 9999px;
-  background: var(--primary-pale);
-  color: var(--positive-deep);
-  padding: 6px 12px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-}
-
 footer {
   background: var(--ink);
   color: var(--canvas-soft);
@@ -501,10 +490,6 @@ footer p {
 
   .url-link {
     max-width: calc(100vw - 72px);
-  }
-
-  .click-count {
-    min-width: auto;
   }
 
   .footer-inner {

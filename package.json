@@ -12,7 +12,6 @@
     "build": "wrangler pages functions build --compatibility-flags=nodejs_compat --compatibility-date=2026-11-21",
     "pages:dev": "wrangler pages dev public",
     "deploy": "wrangler pages deploy public",
-    "deploy:keepalive": "wrangler deploy --config wrangler.keepalive.toml",
     "test": "node --test"
   },
   "dependencies": {
