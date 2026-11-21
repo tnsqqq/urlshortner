@@ -8,6 +8,7 @@ const statusBadge = document.getElementById('statusBadge');
 const refreshBtn = document.getElementById('refreshBtn');
 const copyBtn = document.getElementById('copyBtn');
 const savedLinksKey = 'shortly.shortIds';
+let urlRefreshInProgress = false;
 
 function getShortUrl(shortId) {
   return `${window.location.origin}/${shortId}`;
@@ -52,6 +53,11 @@ function saveShortId(shortId) {
 }
 
 async function loadUrls() {
+  if (urlRefreshInProgress) {
+    return;
+  }
+
+  urlRefreshInProgress = true;
   try {
     const shortIds = getSavedShortIds();
     const response = await fetch(`/url?ids=${encodeURIComponent(shortIds.join(','))}`, {
@@ -82,6 +88,8 @@ async function loadUrls() {
       .join('');
   } catch (error) {
     urlList.innerHTML = '<div class="url-item"><div class="url-meta">Unable to load URLs.</div></div>';
+  } finally {
+    urlRefreshInProgress = false;
   }
 }
 
@@ -142,14 +150,28 @@ copyBtn.addEventListener('click', async () => {
   }
 });
 
-window.addEventListener('focus', () => {
+function refreshDashboard() {
   loadHealth();
   loadUrls();
+}
+
+window.addEventListener('focus', refreshDashboard);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    refreshDashboard();
+  }
 });
 
 setInterval(() => {
-  loadHealth();
-  loadUrls();
+  if (!document.hidden) {
+    loadUrls();
+  }
+}, 1000);
+
+setInterval(() => {
+  if (!document.hidden) {
+    loadHealth();
+  }
 }, 5000);
 
 loadHealth();
