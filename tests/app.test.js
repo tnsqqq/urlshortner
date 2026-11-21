@@ -2,19 +2,34 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   createShortUrl,
+  findRedirectUrl,
+  getCachedRedirect,
   getUrlAnalytics,
+  incrementClickCount,
   isValidShortId,
   isValidUrl,
   listShortUrls,
-  trackRedirect,
 } = require('../lib/url-service');
 const { createApp } = require('../index');
+const { getConnectionString, poolOptions } = require('../connect');
 
 test('JSON API responses are not cached', async () => {
   const { jsonResponse } = await import('../lib/pages-utils.mjs');
   const response = jsonResponse([]);
 
   assert.equal(response.headers.get('Cache-Control'), 'no-store');
+});
+
+test('database connections require TLS and use a small reusable pool', () => {
+  const connectionString = getConnectionString({
+    DATABASE_URL: 'postgresql://user:password@ep-example-pooler.us-east-2.aws.neon.tech/app',
+  });
+  const parsedUrl = new URL(connectionString);
+
+  assert.equal(parsedUrl.searchParams.get('sslmode'), 'require');
+  assert.equal(poolOptions.max, 4);
+  assert.equal(poolOptions.idleTimeoutMillis, 30000);
+  assert.equal(poolOptions.connectionTimeoutMillis, 10000);
 });
 
 test('createApp exposes URL validation without requiring a database', async () => {
@@ -56,6 +71,7 @@ test('creates a short URL in PostgreSQL and returns its public URL', async () =>
   assert.equal(isValidShortId(result.shortId), true);
   assert.match(result.shortUrl, new RegExp(`^https://short\\.example/${result.shortId}$`));
   assert.equal(inserted[1], 'https://example.com');
+  assert.equal(getCachedRedirect(result.shortId), 'https://example.com');
 });
 
 test('accepts generated short IDs and rejects IDs with the wrong length or characters', () => {
@@ -113,19 +129,42 @@ test('returns stored click analytics', async () => {
   assert.equal(result.analytics[0].timestamp, Date.parse('2026-01-01T00:00:00.000Z'));
 });
 
-test('tracks a redirect and returns null for an unknown short ID', async () => {
+test('loads a redirect once and serves subsequent lookups from the in-memory cache', async () => {
+  let queryCount = 0;
   const db = {
     async query(sql, values) {
-      assert.match(sql, /UPDATE short_urls/);
-      assert.match(sql, /INSERT INTO url_visits/);
+      queryCount += 1;
+      assert.match(sql, /SELECT redirect_url FROM short_urls/);
       assert.deepEqual(values, ['short123']);
-      return { rows: [{ redirect_url: 'https://example.com' }] };
+      return { rows: [{ redirect_url: 'https://example.com/target' }] };
     },
   };
 
-  assert.equal(await trackRedirect(db, 'short123'), 'https://example.com');
+  assert.equal(await findRedirectUrl(db, 'short123'), 'https://example.com/target');
+  assert.equal(getCachedRedirect('short123'), 'https://example.com/target');
+  assert.equal(await findRedirectUrl(db, 'short123'), 'https://example.com/target');
+  assert.equal(queryCount, 1);
+});
+
+test('increments click counts atomically and records a visit', async () => {
+  const db = {
+    async query(sql, values) {
+      assert.match(sql, /UPDATE short_urls\s+SET click_count = click_count \+ 1/);
+      assert.match(sql, /INSERT INTO url_visits/);
+      assert.deepEqual(values, ['short123']);
+      return { rows: [{ short_id: 'short123' }] };
+    },
+  };
+
+  await incrementClickCount(db, 'short123');
+});
+
+test('returns null for an unknown short ID during redirect lookup', async () => {
   assert.equal(
-    await trackRedirect({ query: async () => ({ rows: [] }) }, 'unknown'),
+    await findRedirectUrl(
+      { query: async () => ({ rows: [] }) },
+      'unknown01'
+    ),
     null
   );
 });

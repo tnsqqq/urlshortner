@@ -214,7 +214,7 @@ setInterval(() => {
   if (!document.hidden) {
     loadUrls();
   }
-}, 15000);
+}, 2500);
 
 setInterval(() => {
   if (!document.hidden) {
