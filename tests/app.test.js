@@ -17,25 +17,6 @@ test('JSON API responses are not cached', async () => {
   assert.equal(response.headers.get('Cache-Control'), 'no-store');
 });
 
-test('parses valid short codes and same-origin short URLs for dashboard tracking', async () => {
-  const { getShortIdFromInput, isValidShortId } = await import('../public/url-utils.mjs');
-
-  assert.equal(isValidShortId('kYztmZU0V'), true);
-  assert.equal(getShortIdFromInput('kYztmZU0V', 'https://short.example'), 'kYztmZU0V');
-  assert.equal(
-    getShortIdFromInput('https://short.example/kYztmZU0V', 'https://short.example'),
-    'kYztmZU0V'
-  );
-  assert.equal(
-    getShortIdFromInput('https://other.example/kYztmZU0V', 'https://short.example'),
-    null
-  );
-  assert.equal(
-    getShortIdFromInput('https://short.example/kYztmZU0V?preview=1', 'https://short.example'),
-    null
-  );
-});
-
 test('createApp exposes URL validation without requiring a database', async () => {
   const app = createApp();
   const server = app.listen(0);
