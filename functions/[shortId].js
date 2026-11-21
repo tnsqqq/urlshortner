@@ -2,7 +2,7 @@ import urlService from '../lib/url-service.js';
 import { jsonResponse, withDatabase } from '../lib/pages-utils.mjs';
 
 export async function onRequestGet({ params, env, next }) {
-  if (!/^[0-9A-Za-z]{12}$/.test(params.shortId)) {
+  if (!urlService.isValidShortId(params.shortId)) {
     return next();
   }
 

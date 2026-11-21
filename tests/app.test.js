@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   createShortUrl,
   getUrlAnalytics,
+  isValidShortId,
   isValidUrl,
   listShortUrls,
   trackRedirect,
@@ -45,8 +46,16 @@ test('creates a short URL in PostgreSQL and returns its public URL', async () =>
   const result = await createShortUrl(db, 'https://example.com', 'https://short.example');
 
   assert.equal(result.shortId, inserted[0]);
+  assert.equal(isValidShortId(result.shortId), true);
   assert.match(result.shortUrl, new RegExp(`^https://short\\.example/${result.shortId}$`));
   assert.equal(inserted[1], 'https://example.com');
+});
+
+test('accepts generated short IDs and rejects IDs with the wrong length or characters', () => {
+  assert.equal(isValidShortId('a1B2c3D4e'), true);
+  assert.equal(isValidShortId('a1B2c3D4'), false);
+  assert.equal(isValidShortId('a1B2c3D4eF'), false);
+  assert.equal(isValidShortId('a1B2c3D4!'), false);
 });
 
 test('returns no links for an empty localStorage ID list without querying PostgreSQL', async () => {
