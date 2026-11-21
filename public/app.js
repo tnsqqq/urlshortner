@@ -1,5 +1,3 @@
-import { getShortIdFromUrl } from './url-utils.mjs';
-
 const form = document.getElementById('urlForm');
 const urlInput = document.getElementById('urlInput');
 const message = document.getElementById('message');
@@ -9,8 +7,6 @@ const urlList = document.getElementById('urlList');
 const statusBadge = document.getElementById('statusBadge');
 const refreshBtn = document.getElementById('refreshBtn');
 const copyBtn = document.getElementById('copyBtn');
-const trackUrlForm = document.getElementById('trackUrlForm');
-const trackUrlInput = document.getElementById('trackUrlInput');
 const savedLinksKey = 'shortly.shortIds';
 let urlRefreshInProgress = false;
 
@@ -130,41 +126,6 @@ form.addEventListener('submit', async (event) => {
     );
     urlInput.value = '';
     await loadUrls();
-  } catch (error) {
-    setMessage(error.message, 'error');
-  }
-});
-
-trackUrlForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-
-  const shortId = getShortIdFromUrl(trackUrlInput.value.trim(), window.location.origin);
-  if (!shortId) {
-    setMessage('Enter a valid short link from this site.', 'error');
-    return;
-  }
-
-  try {
-    const response = await fetch(`/url?ids=${encodeURIComponent(shortId)}`, {
-      cache: 'no-store',
-    });
-    const items = await response.json();
-
-    if (!response.ok) {
-      throw new Error(items.error || 'Unable to find short link');
-    }
-    if (!items.some((item) => item.shortId === shortId)) {
-      setMessage('Short link not found.', 'error');
-      return;
-    }
-    if (!saveShortId(shortId)) {
-      setMessage('This browser could not save the short link.', 'error');
-      return;
-    }
-
-    trackUrlInput.value = '';
-    await loadUrls();
-    setMessage('Short link added to this dashboard.', 'success');
   } catch (error) {
     setMessage(error.message, 'error');
   }
