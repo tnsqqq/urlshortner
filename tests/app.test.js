@@ -10,6 +10,13 @@ const {
 } = require('../lib/url-service');
 const { createApp } = require('../index');
 
+test('JSON API responses are not cached', async () => {
+  const { jsonResponse } = await import('../lib/pages-utils.mjs');
+  const response = jsonResponse([]);
+
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+});
+
 test('createApp exposes URL validation without requiring a database', async () => {
   const app = createApp();
   const server = app.listen(0);

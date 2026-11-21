@@ -54,7 +54,9 @@ function saveShortId(shortId) {
 async function loadUrls() {
   try {
     const shortIds = getSavedShortIds();
-    const response = await fetch(`/url?ids=${encodeURIComponent(shortIds.join(','))}`);
+    const response = await fetch(`/url?ids=${encodeURIComponent(shortIds.join(','))}`, {
+      cache: 'no-store',
+    });
     const items = await response.json();
 
     if (!items.length) {
