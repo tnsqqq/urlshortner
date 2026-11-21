@@ -156,6 +156,11 @@ function refreshDashboard() {
 }
 
 window.addEventListener('focus', refreshDashboard);
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    refreshDashboard();
+  }
+});
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     refreshDashboard();
