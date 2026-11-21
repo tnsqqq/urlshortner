@@ -17,6 +17,25 @@ test('JSON API responses are not cached', async () => {
   assert.equal(response.headers.get('Cache-Control'), 'no-store');
 });
 
+test('parses valid short codes and same-origin short URLs for dashboard tracking', async () => {
+  const { getShortIdFromInput, isValidShortId } = await import('../public/url-utils.mjs');
+
+  assert.equal(isValidShortId('kYztmZU0V'), true);
+  assert.equal(getShortIdFromInput('kYztmZU0V', 'https://short.example'), 'kYztmZU0V');
+  assert.equal(
+    getShortIdFromInput('https://short.example/kYztmZU0V', 'https://short.example'),
+    'kYztmZU0V'
+  );
+  assert.equal(
+    getShortIdFromInput('https://other.example/kYztmZU0V', 'https://short.example'),
+    null
+  );
+  assert.equal(
+    getShortIdFromInput('https://short.example/kYztmZU0V?preview=1', 'https://short.example'),
+    null
+  );
+});
+
 test('createApp exposes URL validation without requiring a database', async () => {
   const app = createApp();
   const server = app.listen(0);
@@ -73,6 +92,28 @@ test('returns no links for an empty localStorage ID list without querying Postgr
   };
 
   assert.deepEqual(await listShortUrls(db, []), []);
+});
+
+test('loads current click counts from the database for saved short IDs', async () => {
+  const db = {
+    async query(sql, values) {
+      assert.match(sql, /click_count/);
+      assert.match(sql, /ANY\(\$1::text\[\]\)/);
+      assert.deepEqual(values, [['kYztmZU0V']]);
+      return {
+        rows: [{
+          short_id: 'kYztmZU0V',
+          redirect_url: 'https://example.com',
+          click_count: '12',
+          last_visited: null,
+        }],
+      };
+    },
+  };
+
+  const [link] = await listShortUrls(db, ['kYztmZU0V']);
+  assert.equal(link.shortId, 'kYztmZU0V');
+  assert.equal(link.totalClicks, 12);
 });
 
 test('returns stored click analytics', async () => {
